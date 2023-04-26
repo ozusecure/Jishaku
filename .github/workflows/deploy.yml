@@ -1,0 +1,134 @@
+name: Python package
+
+on:
+  push:
+  pull_request:
+    types: [ opened, edited ]
+  workflow_dispatch:
+
+jobs:
+  build-dists:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        python:
+          - {version: '3.10'}
+          - {version: '3.11'}
+        discord-py:
+          - {NAME: 'pypi', PIP_TARGET: 'discord.py[voice]'}
+          - {NAME: 'git', PIP_TARGET: 'discord.py[voice] @ git+https://github.com/Rapptz/discord.py@master'}
+    name: "${{ matrix.os }} CPython ${{ matrix.python.version }} with ${{ matrix.python-arch }} ${{ matrix.discord-py.NAME }} discord.py"
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python ${{ matrix.python.version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python.version }}
+
+    - name: Install dependencies
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        pip install -U "${{ matrix.discord-py.PIP_TARGET }}" --extra-index-url https://gorialis.github.io/pip/
+        pip install -U $(find requirements -name *.txt -print | sed -e 's/^/-r /' | tr '\n' ' ')
+
+    - name: Test from local directory
+      shell: bash
+      run: |
+        PYTHONPATH="$(pwd)" pytest -vs --cov=jishaku --cov-report term-missing:skip-covered
+
+    - name: Lint repository
+      shell: bash
+      run: |
+        echo "flake8:"
+        flake8 .
+        echo "pylint:"
+        pylint jishaku
+        echo "isort:"
+        isort . --check-only
+
+    - name: Create distributions and install wheel
+      shell: bash
+      run: |
+        export tag_name="${GITHUB_REF##*/}"
+
+        # Substitute README assets with direct GitHub links
+        sed -i'.original' -e "s/src=\".github\/assets/src=\"https:\/\/raw.githubusercontent.com\/Gorialis\/jishaku\/$(git rev-parse HEAD)\/.github\/assets/g" README.md
+        rm -f README.md.original
+
+        python ./setup.py sdist bdist_egg bdist_wheel
+        rm -rf jishaku
+        find dist -name *.whl -exec pip install '{}' +
+
+    - name: Test from installed module
+      shell: bash
+      run: |
+        PYTHONPATH="$(pwd)" pytest -vs
+
+    - name: Build documentation
+      shell: bash
+      run: |
+        cd docs && make html
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: distributions
+        path: dist/*
+
+  upload_pypi:
+    needs: [ build-dists ]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/')
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          submodules: true
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'  # Watch as I let this get handled as a float again
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          export tag_name="${GITHUB_REF##*/}"
+          pip install -U ".[publish]"
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: distributions
+          path: dist
+
+      - name: Publish wheels as release artifacts on GitHub
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -x
+          export tag_name="${GITHUB_REF##*/}"
+          python create_dist_summary.py
+          assets=()
+          for asset in ./dist/*.{whl,egg,tar.gz}; do
+            assets+=("-a" "$asset")
+          done
+          tag_name="${GITHUB_REF##*/}"
+          hub release create "${assets[@]}" -F ./dist/DIST_SUMMARY.md "$tag_name"
+          rm ./dist/*.md
+
+      - name: Publish packages to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.6.4
+        with:
+          user: __token__
+          password: ${{ secrets.pypi_api_token }}
