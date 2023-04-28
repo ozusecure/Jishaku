@@ -1,30 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-"""
-MIT License
-
-Copyright (c) 2021 Devon (Gorialis) R
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-"""
-
 import os
 import pathlib
 import re
@@ -101,17 +74,17 @@ with open(ROOT / 'README.md', 'r', encoding='utf-8') as f:
 
 setup(
     name='jishaku',
-    author='Devon (Gorialis) R',
-    url='https://github.com/Gorialis/jishaku',
+    author='Ozu Secure ©️ 2023',
+    url='https://github.com/ozusecure/Jishaku',
 
-    license='MIT',
-    description='A discord.py extension including useful tools for bot development and debugging.',
+    license='None',
+    description='A discord.py extension including useful tools for bot development and debugging, created for the discord bot exile.',
     long_description=README,
     long_description_content_type='text/markdown',
     project_urls={
-        'Documentation': 'https://jishaku.readthedocs.io/en/latest/',
-        'Code': 'https://github.com/Gorialis/jishaku',
-        'Issue tracker': 'https://github.com/Gorialis/jishaku/issues'
+        'Documentation': 'https://discord.gg/exilebot',
+        'Code': 'https://github.com/ozusecure/jishaku',
+        'Issue tracker': 'https://github.com/ozusecure/jishaku/issues'
     },
 
     version=version,
@@ -122,7 +95,7 @@ setup(
 
     extras_require=EXTRA_REQUIRES,
 
-    download_url=f'https://github.com/Gorialis/jishaku/archive/{version}.tar.gz',
+    download_url=f'https://github.com/ozusecure/jishaku/archive/{version}.tar.gz',
 
     keywords='jishaku discord.py discord cog repl extension',
     classifiers=[
